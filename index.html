@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Diaria Profesional</title>
+    <style>
+        :root {
+            --color-pendiente: #FF5252;
+            --color-progreso: #FFC107;
+            --color-completado: #4CAF50;
+            --color-fondo: #f8f9fa;
+            --color-borde: #e0e0e0;
+            --color-texto: #333333;
+            --color-boton: #4285F4;
+            --color-boton-hover: #3367D6;
+            --color-fecha: #5F6368;
+            --color-pendientes-anteriores: #FF7043;
+            --color-fondo-header: #4285F4;
+            --color-texto-header: #FFFFFF;
+            --color-sombra: rgba(0, 0, 0, 0.1);
+            --color-fondo-tarea: #FFFFFF;
+            --color-fondo-input: #FFFFFF;
+            --color-borde-input: #DFE1E5;
+            --color-fondo-calendario: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--color-texto);
+            background-color: var(--color-fondo);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-fondo-header);
+            color: var(--color-texto-header);
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 10px var(--color-sombra);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .fecha-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .fecha-actual {
+            font-size: 1.3em;
+            color: var(--color-texto-header);
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fecha-actual:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .fecha-actual i {
+            font-size: 0.9em;
+        }
+
+        .nav-dia {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: var(--color-texto-header);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2em;
+        }
+
+        .nav-dia:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            background-color: var(--color-fondo-tarea);
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px var(--color-sombra);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .calendario {
+            position: absolute;
+            background: var(--color-fondo-calendario);
+            border: 1px solid var(--color-borde);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px var(--color-sombra);
+            padding: 15px;
+            z-index: 100;
+            margin-top: 10px;
+            width: 320px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .calendario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendario-mes-year {
+            font-weight: 500;
+            font-size: 1.1em;
+            color: var(--color-texto);
+        }
+
+        .calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .calendario-dia-semana {
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.85em;
+            color: var(--color-fecha);
+            padding: 5px;
+        }
+
+        .calendario-dia {
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .calendario-dia:hover {
+            background-color: #f0f5ff;
+        }
+
+        .calendario-dia.actual {
+            background-color: var(--color-boton);
+            color: white;
+            font-weight: 500;
+        }
+
+        .calendario-dia.otro-mes {
+            color: #ccc;
+        }
+
+        .calendario-dia.con-pendientes::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 6px;
+            height: 6px;
+            background-color: var(--color-pendientes-anteriores);
+            border-radius: 50%;
+        }
+
+        .calendario-dia.seleccionado {
+            background-color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .formulario-tarea {
+            display: grid;
+            grid-template-columns: 120px 1fr 150px 100px;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .formulario-tarea {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.9em;
+            color: var(--color-fecha);
+        }
+
+        input, select {
+            padding: 12px 15px;
+            border: 1px solid var(--color-borde-input);
+            border-radius: 8px;
+            font-size: 1em;
+            background-color: var(--color-fondo-input);
+            transition: border 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--color-boton);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        button {
+            background-color: var(--color-boton);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            height: 48px;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background-color: var(--color-boton-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .lista-tareas {
+            border: 1px solid var(--color-borde);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tarea-item {
+            display: grid;
+            grid-template-columns: 120px 1fr auto;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--color-borde);
+            background-color: var(--color-fondo-tarea);
+            transition: all 0.3s ease;
+        }
+
+        .tarea-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .tarea-item:last-child {
+            border-bottom: none;
+        }
+
+        .hora-tarea {
+            font-weight: 500;
+            color: var(--color-fecha);
+            font-size: 0.95em;
+        }
+
+        .texto-tarea {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .estado-botones {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-estado {
+            padding: 6px 12px;
+            font-size: 0.8em;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-pendiente {
+            background-color: #FFEBEE;
+            color: var(--color-pendiente);
+            border: 1px solid #FFCDD2;
+        }
+
+        .btn-progreso {
+            background-color: #FFF8E1;
+            color: var(--color-progreso);
+            border: 1px solid #FFECB3;
+        }
+
+        .btn-completado {
+            background-color: #E8F5E9;
+            color: var(--color-completado);
+            border: 1px solid #C8E6C9;
+        }
+
+        .btn-estado:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .pendiente {
+            color: var(--color-pendiente);
+        }
+
+        .en-progreso {
+            color: var(--color-progreso);
+        }
+
+        .completada {
+            color: var(--color-completado);
+        }
+
+        .proyecto {
+            background-color: #E8F0FE;
+            color: var(--color-boton);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .no-tareas {
+            text-align: center;
+            padding: 30px;
+            color: var(--color-fecha);
+            font-size: 1.1em;
+        }
+
+        .icono-estado {
+            margin-right: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .pendientes-anteriores {
+            background-color: #FFF3E0;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            border-left: 5px solid var(--color-pendientes-anteriores);
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pendientes-anteriores h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--color-pendientes-anteriores);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pendientes-anteriores .tarea-item {
+            background-color: white;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            font-size: inherit;
+            vertical-align: middle;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .tarea-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .hora-tarea {
+                font-size: 0.9em;
+                color: var(--color-boton);
+                font-weight: 500;
+            }
+            
+            .estado-botones {
+                justify-content: flex-end;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>Agenda Diaria</h1>
+            <div class="fecha-container">
+                <button class="nav-dia" id="anterior-dia"><span class="material-icons">chevron_left</span></button>
+                <div class="fecha-actual" id="fecha-actual">
+                    <span id="fecha-texto"></span>
+                    <span class="material-icons">calendar_today</span>
+                </div>
+                <button class="nav-dia" id="siguiente-dia"><span class="material-icons">chevron_right</span></button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div id="pendientes-anteriores-container" class="pendientes-anteriores hidden">
+                <h3><span class="material-icons">warning</span>Tareas pendientes de días anteriores</h3>
+                <div id="pendientes-anteriores-list"></div>
+            </div>
+            
+            <div class="formulario-tarea">
+                <div class="form-group">
+                    <label for="hora-tarea">Hora</label>
+                    <select id="hora-tarea" required>
+                        <!-- Las opciones se generarán con JavaScript -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="texto-tarea">Tarea</label>
+                    <input type="text" id="texto-tarea" placeholder="Descripción de la tarea" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="proyecto-tarea">Proyecto</label>
+                    <input type="text" id="proyecto-tarea" placeholder="Nombre del proyecto" required>
+                </div>
+                
+                <button id="agregar-tarea"><span class="material-icons">add</span>Agregar</button>
+            </div>
+            
+            <div class="lista-tareas" id="lista-tareas">
+                <div class="no-tareas">No hay tareas programadas para este día. ¡Agrega tu primera tarea!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Obtener elementos del DOM
+        const fechaActualElement = document.getElementById('fecha-actual');
+        const fechaTextoElement = document.getElementById('fecha-texto');
+        const horaTareaSelect = document.getElementById('hora-tarea');
+        const textoTareaInput = document.getElementById('texto-tarea');
+        const proyectoTareaInput = document.getElementById('proyecto-tarea');
+        const agregarTareaBtn = document.getElementById('agregar-tarea');
+        const listaTareasDiv = document.getElementById('lista-tareas');
+        const anteriorDiaBtn = document.getElementById('anterior-dia');
+        const siguienteDiaBtn = document.getElementById('siguiente-dia');
+        const pendientesAnterioresContainer = document.getElementById('pendientes-anteriores-container');
+        const pendientesAnterioresList = document.getElementById('pendientes-anteriores-list');
+
+        // Clave para el localStorage
+        const STORAGE_KEY = 'agendaDiariaTareas';
+        
+        // Fecha actual seleccionada
+        let fechaSeleccionada = new Date();
+        fechaSeleccionada.setHours(0, 0, 0, 0);
+
+        // Generar opciones de hora (7:00 AM a 6:00 PM en incrementos de 30 minutos)
+        function generarOpcionesHoras() {
+            const horas = [];
+            for (let hora = 7; hora <= 18; hora++) {
+                for (let minuto = 0; minuto < 60; minuto += 30) {
+                    const horaFormato24 = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`;
+                    let horaFormato12 = hora % 12 || 12;
+                    const amPm = hora < 12 ? 'AM' : 'PM';
+                    horas.push({
+                        formato24: horaFormato24,
+                        display: `${horaFormato12}:${minuto.toString().padStart(2, '0')} ${amPm}`
+                    });
+                }
+            }
+            return horas;
+        }
+
+        // Llenar el selector de horas
+        function llenarSelectorHoras() {
+            const horas = generarOpcionesHoras();
+            horaTareaSelect.innerHTML = '';
+            
+            horas.forEach(hora => {
+                const option = document.createElement('option');
+                option.value = hora.formato24;
+                option.textContent = hora.display;
+                horaTareaSelect.appendChild(option);
+            });
+            
+            // Establecer la hora actual como valor predeterminado
+            const ahora = new Date();
+            const horaActual = ahora.getHours();
+            const minutoActual = ahora.getMinutes();
+            
+            if (horaActual >= 7 && horaActual <= 18) {
+                const minutoRedondeado = minutoActual >= 30 ? 30 : 0;
+                const horaFormato24 = `${horaActual.toString().padStart(2, '0')}:${minutoRedondeado.toString().padStart(2, '0')}`;
+                horaTareaSelect.value = horaFormato24;
+            }
+        }
+
+        // Formatear fecha como YYYY-MM-DD para usar como clave
+        function formatearFechaClave(fecha) {
+            return fecha.toISOString().split('T')[0];
+        }
+
+        // Mostrar la fecha formateada
+        function mostrarFecha(fecha) {
+            const opciones = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' };
+            return fecha.toLocaleDateString('es-ES', opciones);
+        }
+
+        // Actualizar la visualización de la fecha
+        function actualizarFechaDisplay() {
+            fechaTextoElement.textContent = mostrarFecha(fechaSeleccionada);
+            cargarYRenderizarTareas();
+            verificarPendientesAnteriores();
+        }
+
+        // Cargar tareas desde localStorage para una fecha específica
+        function cargarTareas(fecha = null) {
+            const fechaClave = fecha ? formatearFechaClave(fecha) : formatearFechaClave(fechaSeleccionada);
+            const todasTareas = JSON.parse(localStorage.getItem(STORAGE_KEY) || {};
+            return todasTareas[fechaClave] || [];
+        }
+
+        // Guardar tareas en localStorage para una fecha específica
+        function guardarTareas(tareas, fecha = null) {
+            const fechaClave = fecha ? formatearFechaClave(fecha) : formatearFechaClave(fechaSeleccionada);
+            const todasTareas = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+            todasTareas[fechaClave] = tareas;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(todasTareas));
+            
+            // Actualizar días con pendientes para el calendario
+            actualizarDiasConPendientes();
+        }
+
+        // Renderizar todas las tareas para la fecha seleccionada
+        function renderizarTareas(tareas) {
+            if (tareas.length === 0) {
+                listaTareasDiv.innerHTML = '<div class="no-tareas">No hay tareas programadas para este día. ¡Agrega tu primera tarea!</div>';
+                return;
+            }
+            
+            // Ordenar tareas por hora
+            tareas.sort((a, b) => a.hora.localeCompare(b.hora));
+            
+            listaTareasDiv.innerHTML = '';
+            
+            tareas.forEach((tarea, index) => {
+                const tareaItem = document.createElement('div');
+                tareaItem.className = 'tarea-item';
+                
+                // Determinar icono y clase según estado
+                let icono, claseEstado;
+                switch (tarea.estado) {
+                    case 'pendiente':
+                        icono = 'pending_actions';
+                        claseEstado = 'pendiente';
+                        break;
+                    case 'en-progreso':
+                        icono = 'hourglass_top';
+                        claseEstado = 'en-progreso';
+                        break;
+                    case 'completada':
+                        icono = 'check_circle';
+                        claseEstado = 'completada';
+                        break;
+                }
+                
+                tareaItem.innerHTML = `
+                    <div class="hora-tarea">${tarea.hora}</div>
+                    <div class="texto-tarea ${claseEstado}">
+                        <span class="material-icons icono-estado">${icono}</span>
+                        ${tarea.tarea}
+                        <span class="proyecto">${tarea.proyecto}</span>
+                    </div>
+                    <div class="estado-botones">
+                        <button class="btn-estado btn-pendiente" data-index="${index}" data-estado="pendiente">
+                            <span class="material-icons" style="font-size: 16px;">pending_actions</span>
+                        </button>
+                        <button class="btn-estado btn-progreso" data-index="${index}" data-estado="en-progreso">
+                            <span class="material-icons" style="font-size: 16px;">hourglass_top</span>
+                        </button>
+                        <button class="btn-estado btn-completado" data-index="${index}" data-estado="completada">
+                            <span class="material-icons" style="font-size: 16px;">check_circle</span>
+                        </button>
+                    </div>
+                `;
+                
+                listaTareasDiv.appendChild(tareaItem);
+            });
+            
+            // Agregar event listeners a los botones de estado
+            document.querySelectorAll('.btn-estado').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    const nuevoEstado = this.getAttribute('data-estado');
+                    cambiarEstadoTarea(index, nuevoEstado);
+                });
+            });
+        }
+
+        // Cargar y renderizar tareas para la fecha seleccionada
+        function cargarYRenderizarTareas() {
+            const tareas = cargarTareas();
+            renderizarTareas(tareas);
+        }
+
+        // Agregar una nueva tarea
+        function agregarTarea() {
+            const hora = horaTareaSelect.value;
+            const tarea = textoTareaInput.value.trim();
+            const proyecto = proyectoTareaInput.value.trim();
+            
+            if (!tarea || !proyecto) {
+                alert('Por favor, completa todos los campos');
+                return;
+            }
+            
+            const nuevaTarea = {
+                hora,
+                tarea,
+                proyecto,
+                estado: 'pendiente'
+            };
+            
+            const tareas = cargarTareas();
+            tareas.push(nuevaTarea);
+            guardarTareas(tareas);
+            
+            // Limpiar campos y renderizar
+            textoTareaInput.value = '';
+            proyectoTareaInput.value = '';
+            textoTareaInput.focus();
+            cargarYRenderizarTareas();
+        }
+
+        // Cambiar el estado de una tarea
+        function cambiarEstadoTarea(index, nuevoEstado) {
+            const tareas = cargarTareas();
+            if (index >= 0 && index < tareas.length) {
+                tareas[index].estado = nuevoEstado;
+                guardarTareas(tareas);
+                cargarYRenderizarTareas();
+            }
+        }
+
+        // Verificar tareas pendientes de días anteriores
+        function verificarPendientesAnteriores() {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            if (fechaSeleccionada.getTime() === hoy.getTime()) {
+                // Solo mostrar pendientes anteriores si estamos viendo el día actual
+                const todasTareas = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+                let pendientesEncontradas = false;
+                let pendientesHTML = '';
+                
+                // Recorrer todos los días almacenados
+                for (const fechaClave in todasTareas) {
+                    const fechaTarea = new Date(fechaClave);
+                    
+                    // Si es un día anterior al actual
+                    if (fechaTarea < hoy) {
+                        const tareasDia = todasTareas[fechaClave];
+                        const tareasPendientes = tareasDia.filter(t => t.estado === 'pendiente');
+                        
+                        if (tareasPendientes.length > 0) {
+                            pendientesEncontradas = true;
+                            const fechaFormateada = fechaTarea.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                            pendientesHTML += `<h4>${fechaFormateada}</h4>`;
+                            
+                            tareasPendientes.forEach((tarea, index) => {
+                                pendientesHTML += `
+                                    <div class="tarea-item">
+                                        <div class="hora-tarea">${tarea.hora}</div>
+                                        <div class="texto-tarea pendiente">
+                                            <span class="material-icons icono-estado">pending_actions</span>
+                                            ${tarea.tarea}
+                                            <span class="proyecto">${tarea.proyecto}</span>
+                                        </div>
+                                        <div class="estado-botones">
+                                            <button class="btn-estado btn-completado" data-fecha="${fechaClave}" data-index="${index}" data-estado="completada">
+                                                <span class="material-icons" style="font-size: 16px;">check_circle</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        }
+                    }
+                }
+                
+                if (pendientesEncontradas) {
+                    pendientesAnterioresList.innerHTML = pendientesHTML;
+                    pendientesAnterioresContainer.classList.remove('hidden');
+                    
+                    // Agregar event listeners a los botones de completar
+                    document.querySelectorAll('#pendientes-anteriores-list .btn-estado').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const fechaClave = this.getAttribute('data-fecha');
+                            const index = parseInt(this.getAttribute('data-index'));
+                            const nuevoEstado = this.getAttribute('data-estado');
+                            completarTareaAnterior(fechaClave, index, nuevoEstado);
+                        });
+                    });
+                } else {
+                    pendientesAnterioresContainer.classList.add('hidden');
+                }
+            } else {
+                pendientesAnterioresContainer.classList.add('hidden');
+            }
+        }
+
+        // Completar una tarea pendiente de día anterior
+        function completarTareaAnterior(fechaClave, index, nuevoEstado) {
+            const fecha = new Date(fechaClave);
+            const tareas = cargarTareas(fecha);
+            
+            if (index >= 0 && index < tareas.length) {
+                tareas[index].estado = nuevoEstado;
+                
+                const todasTareas = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+                todasTareas[fechaClave] = tareas;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(todasTareas));
+                
+                verificarPendientesAnteriores();
+            }
+        }
+
+        // Mostrar/ocultar calendario
+        function toggleCalendario() {
+            const calendarioExistente = document.getElementById('calendario-popup');
+            if (calendarioExistente) {
+                calendarioExistente.remove();
+                return;
+            }
+            
+            const calendario = document.createElement('div');
+            calendario.id = 'calendario-popup';
+            calendario.className = 'calendario';
+            
+            const ahora = new Date();
+            let mesActual = ahora.getMonth();
+            let añoActual = ahora.getFullYear();
+            
+            if (fechaSeleccionada.getTime() !== ahora.setHours(0, 0, 0, 0)) {
+                mesActual = fechaSeleccionada.getMonth();
+                añoActual = fechaSeleccionada.getFullYear();
+            }
+            
+            // Header del calendario
+            const header = document.createElement('div');
+            header.className = 'calendario-header';
+            
+            const btnAnterior = document.createElement('button');
+            btnAnterior.className = 'nav-dia';
+            btnAnterior.innerHTML = '<span class="material-icons">chevron_left</span>';
+            btnAnterior.addEventListener('click', () => {
+                mesActual--;
+                if (mesActual < 0) {
+                    mesActual = 11;
+                    añoActual--;
+                }
+                renderizarCalendario(calendario, mesActual, añoActual);
+            });
+            
+            const mesYear = document.createElement('div');
+            mesYear.className = 'calendario-mes-year';
+            mesYear.textContent = new Date(añoActual, mesActual).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            
+            const btnSiguiente = document.createElement('button');
+            btnSiguiente.className = 'nav-dia';
+            btnSiguiente.innerHTML = '<span class="material-icons">chevron_right</span>';
+            btnSiguiente.addEventListener('click', () => {
+                mesActual++;
+                if (mesActual > 11) {
+                    mesActual = 0;
+                    añoActual++;
+                }
+                renderizarCalendario(calendario, mesActual, añoActual);
+            });
+            
+            header.appendChild(btnAnterior);
+            header.appendChild(mesYear);
+            header.appendChild(btnSiguiente);
+            calendario.appendChild(header);
+            
+            // Días de la semana
+            const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const gridDiasSemana = document.createElement('div');
+            gridDiasSemana.className = 'calendario-grid';
+            
+            diasSemana.forEach(dia => {
+                const diaElement = document.createElement('div');
+                diaElement.className = 'calendario-dia-semana';
+                diaElement.textContent = dia;
+                gridDiasSemana.appendChild(diaElement);
+            });
+            
+            calendario.appendChild(gridDiasSemana);
+            
+            // Grid de días
+            const gridDias = document.createElement('div');
+            gridDias.className = 'calendario-grid';
+            gridDias.id = 'calendario-grid-dias';
+            calendario.appendChild(gridDias);
+            
+            // Posicionar y mostrar calendario
+            const rect = fechaActualElement.getBoundingClientRect();
+            calendario.style.left = `${rect.left + window.scrollX}px`;
+            calendario.style.top = `${rect.bottom + window.scrollY}px`;
+            
+            document.body.appendChild(calendario);
+            
+            // Renderizar días
+            renderizarCalendario(calendario, mesActual, añoActual);
+        }
+
+        // Renderizar los días del calendario
+        function renderizarCalendario(calendario, mes, año) {
+            const gridDias = calendario.querySelector('#calendario-grid-dias');
+            gridDias.innerHTML = '';
+            
+            const primerDia = new Date(año, mes, 1);
+            const ultimoDia = new Date(año, mes + 1, 0);
+            
+            // Ajustar para que la semana empiece en lunes
+            let diaInicio = primerDia.getDay();
+            if (diaInicio === 0) diaInicio = 6; // Domingo al final
+            else diaInicio--; // Ajustar otros días
+            
+            // Días del mes anterior
+            const ultimoDiaMesAnterior = new Date(año, mes, 0).getDate();
+            for (let i = 0; i < diaInicio; i++) {
+                const dia = document.createElement('div');
+                dia.className = 'calendario-dia otro-mes';
+                dia.textContent = ultimoDiaMesAnterior - diaInicio + i + 1;
+                gridDias.appendChild(dia);
+            }
+            
+            // Días del mes actual
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            
+            const fechaSeleccionadaSinHora = new Date(fechaSeleccionada);
+            fechaSeleccionadaSinHora.setHours(0, 0, 0, 0);
+            
+            // Obtener días con tareas pendientes
+            const diasConPendientes = obtenerDiasConPendientes();
+            
+            for (let i = 1; i <= ultimoDia.getDate(); i++) {
+                const dia = document.createElement('div');
+                dia.className = 'calendario-dia';
+                
+                const fechaDia = new Date(año, mes, i);
+                const fechaDiaStr = formatearFechaClave(fechaDia);
+                
+                // Verificar si es hoy
+                if (fechaDia.getTime() === hoy.getTime()) {
+                    dia.classList.add('actual');
+                }
+                
+                // Verificar si tiene pendientes
+                if (diasConPendientes.includes(fechaDiaStr)) {
+                    dia.classList.add('con-pendientes');
+                }
+                
+                // Resaltar si es la fecha seleccionada
+                if (fechaDia.getTime() === fechaSeleccionadaSinHora.getTime()) {
+                    dia.classList.add('seleccionado');
+                }
+                
+                dia.textContent = i;
+                
+                dia.addEventListener('click', () => {
+                    fechaSeleccionada = fechaDia;
+                    actualizarFechaDisplay();
+                    document.getElementById('calendario-popup').remove();
+                });
+                
+                gridDias.appendChild(dia);
+            }
+            
+            // Días del siguiente mes para completar la cuadrícula
+            const diasRestantes = 42 - (diaInicio + ultimoDia.getDate()); // 6 filas de 7 días
+            for (let i = 1; i <= diasRestantes; i++) {
+                const dia = document.createElement('div');
+                dia.className = 'calendario-dia otro-mes';
+                dia.textContent = i;
+                gridDias.appendChild(dia);
+            }
+            
+            // Actualizar mes/año en el header
+            calendario.querySelector('.calendario-mes-year').textContent = 
+                new Date(año, mes).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        }
+
+        // Obtener días con tareas pendientes
+        function obtenerDiasConPendientes() {
+            const todasTareas = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+            const diasConPendientes = [];
+            
+            for (const fechaClave in todasTareas) {
+                const tareas = todasTareas[fechaClave];
+                const tienePendientes = tareas.some(t => t.estado === 'pendiente');
+                
+                if (tienePendientes) {
+                    diasConPendientes.push(fechaClave);
+                }
+            }
+            
+            return diasConPendientes;
+        }
+
+        // Navegar entre días
+        function cambiarDia(incremento) {
+            const nuevoDia = new Date(fechaSeleccionada);
+            nuevoDia.setDate(nuevoDia.getDate() + incremento);
+            fechaSeleccionada = nuevoDia;
+            actualizarFechaDisplay();
+        }
+
+        // Inicializar la aplicación
+        function init() {
+            llenarSelectorHoras();
+            actualizarFechaDisplay();
+            
+            // Event listeners
+            agregarTareaBtn.addEventListener('click', agregarTarea);
+            fechaActualElement.addEventListener('click', toggleCalendario);
+            anteriorDiaBtn.addEventListener('click', () => cambiarDia(-1));
+            siguienteDiaBtn.addEventListener('click', () => cambiarDia(1));
+            
+            // Permitir agregar con Enter
+            textoTareaInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') agregarTarea();
+            });
+            
+            proyectoTareaInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') agregarTarea();
+            });
+            
+            // Cerrar calendario al hacer clic fuera
+            document.addEventListener('click', (e) => {
+                const calendario = document.getElementById('calendario-popup');
+                if (calendario && !calendario.contains(e.target) && e.target !== fechaActualElement && !fechaActualElement.contains(e.target)) {
+                    calendario.remove();
+                }
+            });
+        }
+
+        // Iniciar la aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
